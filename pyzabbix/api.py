@@ -152,7 +152,7 @@ class ZabbixAPI(object):
     """
 
     def __init__(self, url=None, use_authenticate=False, user=None,
-                 password=None):
+                 password=None,http_auth=False):
 
         url = url or os.environ.get('ZABBIX_URL') or 'https://localhost/zabbix'
         user = user or os.environ.get('ZABBIX_USER') or 'Admin'
@@ -162,6 +162,8 @@ class ZabbixAPI(object):
         self.auth = None
         self.url = url + '/api_jsonrpc.php'
         self._login(user, password)
+        self.userpass = user + ':' + password
+        self.http_auth = http_auth
         logger.debug("JSON-PRC Server: %s", self.url)
 
     def __getattr__(self, name):
@@ -239,6 +241,10 @@ class ZabbixAPI(object):
         req = urllib2.Request(self.url, data)
         req.get_method = lambda: 'POST'
         req.add_header('Content-Type', 'application/json-rpc')
+        if(self.http_auth):
+            import base64
+            usrpas = base64.b64encode(usrpas)
+            req.add_header('Authorization : Basic',usrpas)
 
         try:
             res = urlopen(req)
